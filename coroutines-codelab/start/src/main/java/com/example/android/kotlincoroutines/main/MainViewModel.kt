@@ -21,6 +21,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.android.kotlincoroutines.util.singleArgViewModelFactory
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -133,6 +134,7 @@ class MainViewModel(private val repository: TitleRepository) : ViewModel() {
      */
     fun refreshTitle() {
         // TODO: Convert refreshTitle to use coroutines
+        /** other step */
 //        _spinner.value = true
 //        repository.refreshTitleWithCallbacks(object : TitleRefreshCallback {
 //            override fun onCompleted() {
@@ -144,14 +146,35 @@ class MainViewModel(private val repository: TitleRepository) : ViewModel() {
 //                _spinner.postValue(false)
 //            }
 //        })
-        viewModelScope.launch {
+
+        /** other step */
+//        viewModelScope.launch {
+//            try {
+//                _spinner.value = true
+//                repository.refreshTitle()
+//            } catch (cause: Throwable) {
+//                _snackBar.postValue(cause.message)
+//            } finally {
+//                _spinner.postValue(false)
+//            }
+//        }
+
+        /** other step */
+        launchDataLoad {
+            repository.refreshTitle()
+        }
+    }
+
+    //this is Higher Order function.
+    private fun launchDataLoad(block: suspend () -> Unit): Job {
+        return viewModelScope.launch {
             try {
                 _spinner.value = true
-                repository.refreshTitle()
-            } catch (cause: Throwable) {
-                _snackBar.postValue(cause.message)
+                block()
+            } catch (error: Throwable) {
+                _snackBar.value = error.message
             } finally {
-                _spinner.postValue(false)
+                _spinner.value = false
             }
         }
     }
