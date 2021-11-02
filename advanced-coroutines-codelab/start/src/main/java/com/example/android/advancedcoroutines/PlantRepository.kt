@@ -19,10 +19,12 @@ package com.example.android.advancedcoroutines
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.liveData
 import androidx.lifecycle.map
+import androidx.lifecycle.switchMap
 import com.example.android.advancedcoroutines.util.CacheOnSuccess
 import com.example.android.advancedcoroutines.utils.ComparablePair
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 /**
  * Repository module for handling data operations.
@@ -65,14 +67,23 @@ class PlantRepository private constructor(
      */
     fun getPlantsWithGrowZone(growZone: GrowZone): LiveData<List<Plant>> =
         /*plantDao.getPlantsWithGrowZoneNumber(growZone.number)*/
-        liveData<List<Plant>> {
+        //---------------------------------------------------------
+        /*liveData<List<Plant>> {
             val plantsGrowZoneLiveData = plantDao.getPlantsWithGrowZoneNumber(growZone.number)
             val customSortOrder = plantsListSortOrderCache.getOrAwait()
 
             emitSource(plantsGrowZoneLiveData.map { plantList ->
                 plantList.applySort(customSortOrder)
             })
-        }
+        }*/
+        //----------------------------------------------------------
+        plantDao.getPlantsWithGrowZoneNumber(growZone.number)
+            .switchMap { plantList ->
+                liveData {
+                    val customSortOrder = plantsListSortOrderCache.getOrAwait()
+                    emit(plantList.applyMainSafeSort(customSortOrder))
+                }
+            }
 
     /**
      * Returns true if we should make a network request.
@@ -117,6 +128,11 @@ class PlantRepository private constructor(
         val plants = plantService.plantsByGrowZone(growZone)
         plantDao.insertAll(plants)
     }
+
+    suspend fun List<Plant>.applyMainSafeSort(customSortOrder: List<String>) =
+        withContext(defaultDispatcher) {
+            this@applyMainSafeSort.applySort(customSortOrder)
+        }
 
     private fun List<Plant>.applySort(customSortOrder: List<String>) : List<Plant> {
         return sortedBy { plant ->
