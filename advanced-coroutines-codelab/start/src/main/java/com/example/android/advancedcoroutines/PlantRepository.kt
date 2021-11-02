@@ -16,6 +16,7 @@
 
 package com.example.android.advancedcoroutines
 
+import androidx.annotation.AnyThread
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.liveData
 import androidx.lifecycle.map
@@ -129,6 +130,7 @@ class PlantRepository private constructor(
         plantDao.insertAll(plants)
     }
 
+    @AnyThread
     suspend fun List<Plant>.applyMainSafeSort(customSortOrder: List<String>) =
         withContext(defaultDispatcher) {
             this@applyMainSafeSort.applySort(customSortOrder)
