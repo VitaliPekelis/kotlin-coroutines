@@ -16,11 +16,7 @@
 
 package com.example.android.advancedcoroutines
 
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.switchMap
-import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.*
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collect
@@ -74,40 +70,47 @@ class PlantListViewModel internal constructor(
         }
     }
 
+    val plantsUsingFlow: LiveData<List<Plant>> = plantRepository.plantsFlow.asLiveData()
+
     init {
         // When creating a new ViewModel, clear the grow zone and perform any related udpates
         clearGrowZoneNumber()
 
 
 
-        viewModelScope.launch {
+//        viewModelScope.launch {
+//
+//            //            mackFlow().collect { value ->
+//            //                println("Vitali  got $value")
+//            //            }
+//            //            println("Vitali  flow is completed")
+//            //-------------------------------------------------------- step 8
+//            val repeatableFlow = mackFlow().take(2) // we only care about the first two elements
+//            println("Vitali first collection")
+//            repeatableFlow.collect()
+//            println("Vitali collecting again")
+//            repeatableFlow.collect()
+//            println("Vitali second collection completed")
+//
+//        }
 
-            //            mackFlow().collect { value ->
-            //                println("Vitali  got $value")
-            //            }
-            //            println("Vitali  flow is completed")
-            //-------------------------------------------------------- step 8
-            val repeatableFlow = mackFlow().take(2) // we only care about the first two elements
-            println("Vitali first collection")
-            repeatableFlow.collect()
-            println("Vitali collecting again")
-            repeatableFlow.collect()
-            println("Vitali second collection completed")
-
+        //----------------------------------------- Step 10
+        launchDataLoad {
+            plantRepository.tryUpdateRecentPlantsCache()
         }
     }
 
 
 
-    private fun mackFlow() = flow {
-            println("Vitali sending first value")
-            emit(1)
-            println("Vitali  first value collected, sending another value")
-            emit(2)
-            println("Vitali  second value collected, sending a third value")
-            emit(3)
-            println("Vitali  done")
-        }
+//    private fun mackFlow() = flow {
+//            println("Vitali sending first value")
+//            emit(1)
+//            println("Vitali  first value collected, sending another value")
+//            emit(2)
+//            println("Vitali  second value collected, sending a third value")
+//            emit(3)
+//            println("Vitali  done")
+//        }
 
 
 
