@@ -25,7 +25,8 @@ import com.example.android.advancedcoroutines.util.CacheOnSuccess
 import com.example.android.advancedcoroutines.utils.ComparablePair
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.withContext
 
 /**
@@ -57,14 +58,34 @@ class PlantRepository private constructor(
             })
         }
 
-    val plantsFlow: Flow<List<Plant>>
-        get() = plantDao.getPlantsFlow()
-
-
     private var plantsListSortOrderCache =
         CacheOnSuccess(onErrorFallback = { listOf() }) {
             plantService.customPlantSortOrder()
     }
+
+    val customSortFlow = flow { emit(plantsListSortOrderCache.getOrAwait()) }/*.onStart {
+        emit(listOf())
+        delay(1500)
+    }*/
+    // optional
+    //val customSortFlow = plantsListSortOrderCache::getOrAwait.asFlow()
+
+    val plantsFlow: Flow<List<Plant>>
+        get() = plantDao.getPlantsFlow() // When the result of customSortFlow is available,
+            // this will combine it with the latest value from
+            // the flow above.  Thus, as long as both `plants`
+            // and `sortOrder` are have an initial value (their
+            // flow has emitted at least one value), any change
+            // to either `plants` or `sortOrder`  will call
+            // `plants.applySort(sortOrder)`.
+            .combine(customSortFlow) { plants, sortOrder ->
+                plants.applySort(sortOrder)
+            }
+            //    The operator flowOn launches a new coroutine to collect the flow above it and introduces a buffer to write the results.
+            //    You can control the buffer with more operators, such as conflate which says to store only the last value produced in the buffer.
+            /**    It's important to be aware of the buffer when using flowOn with large objects such as Room results since it is easy to use a large amount of memory buffering results.*/
+            .flowOn(defaultDispatcher).conflate()
+
 
     /**
      * Fetch a list of [Plant]s from the database that matches a given [GrowZone].
